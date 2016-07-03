@@ -1,0 +1,80 @@
+﻿@model PassPerfect.Models.TestModel
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-6 col-md-4 col-md-offset-4">
+            <div class="account-wall">
+                <form class="form-signin beforeauthtoken">
+                    <input type="text" id="username" class="form-control" placeholder="Username" required autofocus>
+                    <input type="password" id="password" class="form-control" placeholder="Password" required autofocus>
+                    <button id="btn-getauthtoken" class="btn btn-lg btn-primary btn-block" type="button" style="width:94%">
+                        Get Auth Token
+                    </button>
+                </form>
+                <form class="form-signin afterauthtoken">
+                    <button id="btn-getpass" class="btn btn-lg btn-primary btn-block" type="button" style="width:94%">
+                        Get Encrypted Password
+                    </button>
+                </form>
+                <div class="form-group form-signin">
+                    <label for="comment">Encrypted Password:</label>
+                    <p id="encryptedpassword">
+
+                    </p>
+                </div>
+                <form class="form-signin afterpassword">
+                    <input type="text" id="decrypted-password" class="form-control" placeholder="Paste Password Here" required autofocus>
+                    <button id="btn-login" class="btn btn-lg btn-primary btn-block" type="button" style="width:94%">
+                        Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('.form-signin.afterauthtoken').hide();
+        $('#btn-getauthtoken').on('click', function (e) {
+            e.preventDefault();
+            var username = $('#username').val();
+            var password = $('#password').val();
+            $.post('Home/GetAuthToken', { username: username, password: password }, function (data) {
+                $('.form-signin.beforeauthtoken').hide();
+                $('.form-signin.afterauthtoken').show();
+                $('#password').val('');
+            });
+        });
+
+        $('#btn-getpass').on('click', function (e) {
+            e.preventDefault();
+            var username = $('#username').val();
+            $.get('Home/GetPGPMessage', { username: username }, function (data) {
+                var cleanedData = data.ciphertext.replace(/\"/g, "")
+                $('#encryptedpassword').html(cleanedData);
+                $('.form-signin.afterauthtoken').hide();
+                $('.form-signin.afterpassword').show();
+            });
+        });
+
+        $('#btn-login').on('click', function (e) {
+            e.preventDefault();
+            //Need to hash password on client side, this is missing right now.
+
+            var username = $('#username').val();
+            var unhashedPassword = $('#decrypted-password').val();
+            var shaObj = new jsSHA("SHA-512", "TEXT");
+            shaObj.update(unhashedPassword);
+            var hashedPassword = shaObj.getHash("B64");
+            $.get("Home/Login", { username: username, password: hashedPassword }, function (data) {
+                var test = data.url;
+                window.location.href = data.url;
+            });
+        });
+    });
+</script>
+@section scripts {
+    <script src="~/Scripts/jsSHA/SHA512.js"></script>
+}
+
+
